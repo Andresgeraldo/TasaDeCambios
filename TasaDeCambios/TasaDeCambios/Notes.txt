@@ -5,6 +5,9 @@
  Los using es bueno ponerlos dentro del NameSpace
  Si tengo un solo elemento uso la content page solamente, de lo contrario debo apilar en contendedores (stacklayout por ejemplo)
  < Padding="20,30,20,10"> izquierda, superior, derecha, inferior
+ LAs observables colection son asi, porque alguien necesita ver los cambios en tiempo real
+ si no le pongo privado o publico a un metodo o funcion el lo asume privado
+    <RowDefinition Height="*"> significa que todas las filas van a tener el mismo tamaño
 
 
  
@@ -26,11 +29,26 @@
  10.Por cada Binding creamos el equivalente en la MainViewModel 
  11.Las listas de un objeto (clase) deben ser observable colection (  public ObservableCollection<Rate> Rates { get; set; })
  12.Los Comandos son especiales por lo que importamos el MVVM LightLibs a los fines de que este sean manejados como propiedad. (actualmente se necesita MvvmLightLibsStd10)
-	public ICommand ConvertCommand { get { return new RelayCommand(Convert)} }
+	public ICommand ConvertCommand { get { return new RelayCommand(Convert);} }
 
         void Convert()
         {
             throw new NotImplementedException();
+        }
+ 13.Actualizamos la view model y para eso debemos implementar el INotifyPropertyChanged
+ 14.Implementamos la interfaz ( public event PropertyChangedEventHandler PropertyChanged;)
+ 15.Si las propiedades son cambiadas desde la view necesitamos unos atributos que dependan de esas propiedades las mismas se nombran con _ y minuscula ( bool _isRunning;)
+ 16.Extendemos los get y set de las propiedades para que cuando haya un cambio devuelva el nuevo valor y procedemos a notificar al app que hubo un cambio
+	public bool IsRunning
+        {
+            get { return _isRunning; }
+            set {
+                if (_isRunning != value)
+                {
+                    _isRunning = value;
+                   PropertyChanged?.Invoke(this,new PropertyChangedEventArgs(nameof(IsRunning)));
+                }
+            }
         }
 
 
