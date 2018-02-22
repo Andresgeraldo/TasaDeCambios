@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="TasaDeCambios.Views.MainView"
+             xmlns:i18n="clr-namespace:TasaDeCambios.Helpers"
              BackgroundColor="YellowGreen"
              BindingContext="{Binding Main, Source={StaticResource Locator}}">
     <ContentPage.Padding>
@@ -20,7 +21,8 @@
                     FontAttributes="Bold"
                     HorizontalOptions="Center" 
                     Margin="10"
-                    Text="Tasas de Cambio">
+                    Text="{i18n:Translate Title}">
+                    <!--Text="Tasas de Cambio">-->
             </Label>
 
             <Grid>
@@ -126,6 +128,11 @@
                     Margin="0,10"
                     Text="{Binding Result,Mode=TwoWay}"
                     VerticalOptions="FillAndExpand"
+                    VerticalTextAlignment="Center">
+            </Label>
+            <Label
+                    HorizontalOptions="Center"
+                    Text="{Binding Status,Mode=TwoWay}"
                     VerticalTextAlignment="Center">
             </Label>
         </StackLayout>

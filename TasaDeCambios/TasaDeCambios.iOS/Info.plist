@@ -50,5 +50,14 @@
 	<string>LaunchScreen</string>
 	<key>CFBundleName</key>
 	<string>TasaDeCambios</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>es</string>
+		<string>fr</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>XSLaunchImageAssets</key>
+	<string>Resources/Media.xcassets/LaunchImages.launchimage</string>
 </dict>
 </plist>

@@ -1,19 +1,24 @@
 ﻿namespace TasaDeCambios.ViewModels
 {
     using GalaSoft.MvvmLight.Command;
-    using System;
     using System.Collections.ObjectModel;
     using System.ComponentModel;
-    using System.Net.Http;
     using System.Windows.Input;
     using TasaDeCambios.Models;
     using System.Collections.Generic;
-    using Newtonsoft.Json;
     using Xamarin.Forms;
+    using TasaDeCambios.Helpers;
+    using TasaDeCambios.Services;
+    using System;
+    using System.Threading.Tasks;
 
     public class MainViewModel : INotifyPropertyChanged
     {
-
+        #region Servicios
+        ApiService apiService;
+        DialogService dialogService;
+        DataService dataService;
+        #endregion
         #region Atributos
 
         bool _isRunning;
@@ -21,6 +26,8 @@
         string _result;
         Rate _sourceRate;
         Rate _targetRate;
+        string _status;
+        List<Rate> rates;
         ObservableCollection<Rate> _rates;
 
         #endregion
@@ -33,7 +40,7 @@
         {
             if (string.IsNullOrEmpty(Amount))
             {
-                await Application.Current.MainPage.DisplayAlert("Error", "Debe entroducir un valor a convertir", "Accept"); //titulo, error como tal
+                await dialogService.ShowMessage(Lenguages.Error, "Debe entroducir un valor a convertir"); //titulo, error como tal
                 return;
             }
 
@@ -41,19 +48,19 @@
 
             if (!decimal.TryParse(Amount, out amount))
             {
-                await Application.Current.MainPage.DisplayAlert("Error", "Debe ingresar un valor numerico", "Accept"); //titulo, error como tal
+                await dialogService.ShowMessage(Lenguages.Error, "Debe ingresar un valor numerico"); //titulo, error como tal
                 return;
             }
 
             if (SourceRate == null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", "Debe seleccionar una tasa de origen ", "Accept"); //titulo, error como tal
+                await dialogService.ShowMessage(Lenguages.Error, "Debe seleccionar una tasa de origen "); //titulo, error como tal
                 return;
             }
 
             if (TargetRate == null)
             {
-                await Application.Current.MainPage.DisplayAlert("Error", "Debe seleccionar una tasa destino", "Accept"); //titulo, error como tal
+                await dialogService.ShowMessage(Lenguages.Error, "Debe seleccionar una tasa destino"); //titulo, error como tal
                 return;
             }
 
@@ -84,6 +91,9 @@
 
         public MainViewModel()
         {
+            apiService = new ApiService();
+            dialogService = new DialogService();
+            dataService = new DataService();
             LoadRates();
         }
 
@@ -101,38 +111,64 @@
         {
             IsEnabled = false;
             IsRunning = true;
-            Result = "Cargando las tasas...";
-            try
+            Result = Lenguages.Loading;
+
+            var conection = await apiService.CheckConnection();
+            if (!conection.IsSuccess)
             {
-                var client = new HttpClient(); //creamos el cliente
-                client.BaseAddress = new Uri("http://apiexchangerates.azurewebsites.net"); //le asignamos la Url base
-                var controller = "/api/Rates"; //creamos una variable x para el metodo del api
-                var response = await client.GetAsync(controller); //creamos una respuesta que viene dada por un get asincrono
-                var result = await response.Content.ReadAsStringAsync(); //leemos el resultado
-
-                if (!response.IsSuccessStatusCode) //si no tiene respuesta
-                {
-                    IsRunning = false;
-                    IsEnabled = true;
-                    Result = result;
-                }
-
-                var rates = JsonConvert.DeserializeObject<List<Rate>>(result); //creamos una variable descerializadora tipo lista del resultado
-
-                Rates = new ObservableCollection<Rate>(rates); //con mi lista de rates armo una obserbable colection de Rates
-
-                IsRunning = false;
-                Result = "Listo para Convertir";
-                IsEnabled = true;
+                //IsRunning = false;
+                //Result = conection.Message;
+                //return;
+                LoadLocalData();
             }
-            catch (Exception ex)
+            else
             {
-                IsEnabled = true;
-                IsRunning = false;
-                Result = ex.Message;
+                await LoadDataFromAPI();
             }
+            
+            if (rates.Count == 0)
+            {
+                IsRunning = false;
+                IsEnabled = false;
+                Result = "There are not internet connection and not load previously rates. Please try again with internet connection";
+                Status = "Nohay tasas cargadas";
+                return;
+            }
+
+            Rates = new ObservableCollection<Rate>(rates);
+            
+            IsRunning = false;
+            IsEnabled = true;
+            Result = Lenguages.Ready;
+           
+
         }
 
+        async Task LoadDataFromAPI()
+        {
+            var url = Application.Current.Resources["URLAPI"].ToString();
+            var response = await apiService.GetList<Rate>(
+                url,
+                "/api/Rates");
+
+            if (!response.IsSuccess)
+            {
+                LoadLocalData();
+                return;
+            }
+
+            rates = (List<Rate>)response.Result; //tasas es lo que devolcio el servicio
+            dataService.DeleteAll<Rate>(); //borra todo el modelo de tasas
+            dataService.Save(rates); //graba en tasas lo que llego
+
+            Status = "Tasas Cargadas de Internet";
+        }
+
+        void LoadLocalData()
+        {
+            rates = dataService.Get<Rate>(false);
+            Status = "Tasas Cargadas desde la data local";
+        }
         #endregion
 
         #region Propiedades
@@ -154,6 +190,18 @@
         //public Rate SourceRate { get; set; }
 
         //public Rate TargetRate { get; set; }
+
+        public string Status
+        {
+            get { return _status; }
+            set {
+                if (_status != value)
+                {
+                    _status = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Status)));
+                }
+            }
+        }
 
         public Rate SourceRate
         {
