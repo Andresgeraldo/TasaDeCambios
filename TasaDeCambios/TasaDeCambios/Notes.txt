@@ -1,0 +1,80 @@
+﻿ 
+ Notas de programacion: 
+ CTOR + Tab + Tab crea el constructor de una clase
+ PROP + Tab + Tab crea una propiedad
+ Los using es bueno ponerlos dentro del NameSpace
+ Si tengo un solo elemento uso la content page solamente, de lo contrario debo apilar en contendedores (stacklayout por ejemplo)
+ < Padding="20,30,20,10"> izquierda, superior, derecha, inferior
+ LAs observables colection son asi, porque alguien necesita ver los cambios en tiempo real
+ si no le pongo privado o publico a un metodo o funcion el lo asume privado
+    <RowDefinition Height="*"> significa que todas las filas van a tener el mismo tamaño
+	todo lo que inicie con i es porque es una interfaz (o debe serlo)
+	es bueno siempre negar para no tener que hacer un else
+	los metodos deben ser especificos y hacer una sola cosa,
+	implementar o heredar de IDisposable es para que cada vez que se llame una clase se destruya y no deje conecciones abiertas
+
+
+ 
+ Primer paso despues de crear la solucion es la creacion de la estructura para el patron MVVM
+
+ 1. Crear la carpeta ViewModels 
+ 2. Crear la Clase mas importante del proyecto entero que es la clase MainViewModel (en la carpeta de las viewmodels)
+ 3. Creamos el constructor de la clase CTOR + tab + tab
+ 4. Creamos la carpeta Infrastructure
+ 5. Creamos una clase llamada InstanceLocator que hacemos publica e importamos (using) las ViewModels para luego crear una propiedad de la MainViewModel
+	(public MainViewModel Main { get; set; }) e instanciarla en el constructor ( Main = new MainViewModel();)
+ 6. Creamos el diccionario de recursos, en el xml se crea una nueva propiedad  ( xmlns:infra="clr-namespace:xxxxxxxxxxx.Infrastructure" ), (infra es un nombre cualquiera)
+    en los recursos del app crear el diccionario (<ResourceDictionary>) y dentro instanciar de la propiedad que llamamos arriba usaremos su clase (<infra:InstanceLocator x:Key="Locator"/>)
+	esto se hace para no ligar la viewmodel mediante codebehind
+ 7. Creamos las carpetas de Views (lo que el usuario vera ) y creamos la pagina principal, la cual vamos a ligar (bindar) de la siguiente forma 
+    BindingContext="{Binding Main, Source={StaticResource Locator}}">
+ 8. Borramos la pagina de inicio que creo el proyecto y nos vamos a codebehind del app.xaml y cambiamos la pagina de inicio
+ 9. Creamos las carpetas de Models donde tendremos las clases o modelos.
+ 10.Por cada Binding creamos el equivalente en la MainViewModel 
+ 11.Las listas de un objeto (clase) deben ser observable colection (  public ObservableCollection<Rate> Rates { get; set; })
+ 12.Los Comandos son especiales por lo que importamos el MVVM LightLibs a los fines de que este sean manejados como propiedad. (actualmente se necesita MvvmLightLibsStd10)
+	public ICommand ConvertCommand { get { return new RelayCommand(Convert);} }
+
+        void Convert()
+        {
+            throw new NotImplementedException();
+        }
+ 13.Actualizamos la view model y para eso debemos implementar el INotifyPropertyChanged
+ 14.Implementamos la interfaz ( public event PropertyChangedEventHandler PropertyChanged;)
+ 15.Si las propiedades son cambiadas desde la view necesitamos unos atributos que dependan de esas propiedades las mismas se nombran con _ y minuscula ( bool _isRunning;)
+ 16.Extendemos los get y set de las propiedades para que cuando haya un cambio devuelva el nuevo valor y procedemos a notificar al app que hubo un cambio
+	public bool IsRunning
+        {
+            get { return _isRunning; }
+            set {
+                if (_isRunning != value)
+                {
+                    _isRunning = value;
+                   PropertyChanged?.Invoke(this,new PropertyChangedEventArgs(nameof(IsRunning)));
+                }
+            }
+        }
+ 17.Como existen cosas que se hacen de una forma diferente en android y Ios, creamos la carpeta de interfaces que vamos a usar en cada proyecto
+ 18.Creamos la carpeta Helper para las clases de ayuda
+ 19.Creamos una carpeta en cada proyecto que nos permita crear las configuraciones de implementacion
+ 20.Creamos y referenciamos una clase en los helpers que permita extender operaciones al XAML (TranslateExtension)  en el XAML del view  (  xmlns:i18n="clr-namespace:ForeignExchange2.Helpers")
+ 21.Nos creamos la carpeta de servicios y la clase de servicios (ApiService) junto con una clase de respuesta  (Response) en los modelos
+ 22.Necesitamos validar la conexion a internet por lo que buscamos el nugget (xam.plugin.connectivity) y lo agregamos a toda la solucion
+ 23.Creamos una base de datos local agregamos SQLite.Net-PCL and SQLiteNetExtentions
+ 24.Convertirmos las clases a estructura de datos, para eso definimos la clave primaria ([PrimaryKey])
+ 25.Sobreescribimos el metodo GetHashCode()
+		public override int GetHashCode()
+        {
+            return RateId; //la clave principal de la clase
+        }
+ 26.En la carpeta interfaces creamos los config, ya que la forma de trabajar sqlite es distinta en cada plataforma y la implementamos en cada plataforma
+ 27.Creamos la clase de acceso a datos en la carpeta Data
+ 28.Creamos el servicio de datos en la carpeta de servicios
+ 29.Creamos el servicio de mensajeria (DialogService)
+ 30.Creamos la seccion de parametros y le ponemos el tipo (string y el key )   <!-- Parameters -->  <x:String x:Key="URLAPI">http://apiexchangerates.azurewebsites.net</x:String>  
+ 31.Para los iconos entramos a https://romannurik.github.io/AndroidAssetStudio y en la carpeta drawable ponemos el hdpi y despues cada quien en su pcarpeta
+
+
+
+
+
